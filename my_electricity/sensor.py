@@ -17,7 +17,6 @@ class ElectricitySensor(SensorEntity):
         self.coordinator = coordinator
         self._attr_name = f"Electricity Usage ({meter_point_id})"
         self._attr_unique_id = f"electricity_usage_{meter_point_id}"
-        self._state = None
         self.meter_point_id = meter_point_id
 
         _LOGGER.info(f"Initialized ElectricitySensor for meter_point_id: {meter_point_id}")
@@ -31,14 +30,21 @@ class ElectricitySensor(SensorEntity):
         await self.coordinator.async_request_refresh()
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
+    # Retrieve configuration details from config_entry
     meter_point_id = config_entry.data.get("meter_point_id")
+    subscription_key = config_entry.data.get("subscription_key")
+    api_key = config_entry.data.get("api_key")
+    client_secret = config_entry.data.get("client_secret")
+
+    # Logging for troubleshooting
     _LOGGER.info(f"Setting up entity for meter_point_id: {meter_point_id}")
+
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
         name="electricity usage",
-        update_method=lambda: fetch_data(meter_point_id),
-        update_interval=timedelta(minutes=30),
+        update_method=lambda: fetch_data(meter_point_id, subscription_key, api_key, client_secret),
+        update_interval=timedelta(minutes=1),
     )
 
     await coordinator.async_refresh()
@@ -55,12 +61,12 @@ def rate_limit():
     last_called_times.append(current_time)
     _LOGGER.debug(f"Rate limit check passed. Current API call count: {len(last_called_times)}")
 
-async def fetch_data(meter_point_id):
+async def fetch_data(meter_point_id, subscription_key, api_key, client_secret):
     try:
         rate_limit()  # Apply rate limiting before making the request
         headers = {
-            "Authorization": "Bearer YOUR_TOKEN",
-            "Ocp-Apim-Subscription-Key": "YOUR_SUBSCRIPTION_KEY"
+            "Authorization": f"Bearer {api_key}",
+            "Ocp-Apim-Subscription-Key": subscription_key
         }
         params = {
             "meteringPointId": meter_point_id,
@@ -72,10 +78,10 @@ async def fetch_data(meter_point_id):
         response = requests.get(API_URL, headers=headers, params=params)
         response.raise_for_status()
         data = response.json()
-        
+
         # Log the response for debugging purposes
         _LOGGER.debug(f"API response: {data}")
-        
+
         # Extract the kWh usage for the specific meter point
         time_series = data.get("timeSeriesResult", {}).get("timeSeries", {})
         if time_series:
@@ -84,15 +90,6 @@ async def fetch_data(meter_point_id):
             return {meter_point_id: usage_sum}
         _LOGGER.error(f"Meter point ID {meter_point_id} not found in response.")
         raise UpdateFailed(f"Meter point ID {meter_point_id} not found in response.")
-    except requests.exceptions.HTTPError as http_err:
-        _LOGGER.error(f"HTTP error occurred: {http_err}")
-        raise UpdateFailed(f"HTTP error occurred: {http_err}")
-    except requests.exceptions.ConnectionError as conn_err:
-        _LOGGER.error(f"Connection error occurred: {conn_err}")
-        raise UpdateFailed(f"Connection error occurred: {conn_err}")
-    except requests.exceptions.Timeout as timeout_err:
-        _LOGGER.error(f"Timeout error occurred: {timeout_err}")
-        raise UpdateFailed(f"Timeout error occurred: {timeout_err}")
     except requests.exceptions.RequestException as req_err:
         _LOGGER.error(f"Request error occurred: {req_err}")
         raise UpdateFailed(f"Request error occurred: {req_err}")

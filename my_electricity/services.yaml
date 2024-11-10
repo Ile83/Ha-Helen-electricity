@@ -1,4 +1,4 @@
-update_usage:
+update_usage: 
   name: "Update Electricity Usage"
   description: "Manually update the electricity usage data for a specified meter point."
   fields:
@@ -6,14 +6,6 @@ update_usage:
       description: "Meter point ID for which you want to update the electricity usage."
       example: "1234567"
 
-fetch_pricing:
-  name: "Fetch Current Pricing"
-  description: "Fetch the latest pricing information for electricity consumption."
-  fields:
-    meter_point_id:
-      description: "Meter point ID for which you want to fetch the pricing information."
-      example: "1234567"
-
 reset_rate_limit:
   name: "Reset Rate Limit"
-  description: "Reset the rate limiting counter, in case rate limit was hit and needs to be reset manually."
+  description: "Reset the rate limiting counter, in case rate limit was hit and needs to be reset manually.
