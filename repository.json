@@ -1,0 +1,8 @@
+{
+    "name": "My Electricity Usage Add-On Repository",
+    "description": "Custom integration to monitor electricity usage via Helen API",
+    "version": "1.0",
+    "url": "https://github.com/Ile83/Ha-Helen-electricity",
+    "author": "Ilkka Heusala"
+  }
+  

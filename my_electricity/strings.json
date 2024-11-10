@@ -1,0 +1,35 @@
+{
+    "config": {
+      "title": "Electricity Usage",
+      "step": {
+        "user": {
+          "title": "Configure Electricity Usage Integration",
+          "description": "Enter the required details to connect to Helen's API",
+          "data": {
+            "client_id": "Client ID",
+            "client_secret": "Client Secret",
+            "subscription_key": "Subscription Key",
+            "meter_point_id": "Meter Point ID"
+          }
+        }
+      },
+      "error": {
+        "auth": "Invalid credentials. Please check your client ID and secret."
+      },
+      "abort": {
+        "already_configured": "This meter point is already configured."
+      }
+    },
+    "options": {
+      "step": {
+        "init": {
+          "title": "Options for Electricity Usage",
+          "description": "Configure additional options for the integration",
+          "data": {
+            "update_interval": "Update interval (in minutes)"
+          }
+        }
+      }
+    }
+  }
+  
