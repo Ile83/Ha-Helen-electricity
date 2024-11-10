@@ -1,6 +1,8 @@
 import requests
 from homeassistant.components.sensor import SensorEntity
+from homeassistant.const import ENERGY_KILO_WATT_HOUR, DEVICE_CLASS_ENERGY
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from homeassistant.helpers.entity import EntityCategory
 from datetime import timedelta
 import logging
 import time
@@ -17,31 +19,26 @@ class ElectricitySensor(SensorEntity):
         self.coordinator = coordinator
         self._attr_name = f"Electricity Usage ({meter_point_id})"
         self._attr_unique_id = f"electricity_usage_{meter_point_id}"
-        self._state = None
         self.meter_point_id = meter_point_id
+        self._attr_device_class = DEVICE_CLASS_ENERGY
+        self._attr_state_class = "total_increasing"
+        self._attr_unit_of_measurement = ENERGY_KILO_WATT_HOUR
+        self._state = None
 
     @property
     def state(self):
         return self.coordinator.data.get(self.meter_point_id)
 
-    @property
-    def unit_of_measurement(self):
-        return "kWh"
-
     async def async_update(self):
         await self.coordinator.async_request_refresh()
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
-    client_id = config_entry.data.get("client_id")
-    client_secret = config_entry.data.get("client_secret")
-    subscription_key = config_entry.data.get("subscription_key")
     meter_point_id = config_entry.data.get("meter_point_id")
-
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
         name="electricity usage",
-        update_method=lambda: fetch_data(meter_point_id, client_id, client_secret, subscription_key),
+        update_method=lambda: fetch_data(meter_point_id),
         update_interval=timedelta(minutes=30),
     )
 
