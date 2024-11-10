@@ -38,7 +38,7 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
         _LOGGER,
         name="electricity usage",
         update_method=lambda: fetch_data(meter_point_id),
-        update_interval=timedelta(minutes=30),
+        update_interval=timedelta(minutes=5),
     )
 
     await coordinator.async_refresh()
