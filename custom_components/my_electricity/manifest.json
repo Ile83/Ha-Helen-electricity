@@ -1,0 +1,9 @@
+{
+    "domain": "my_electricity",
+    "name": "Electricity Usage",
+    "version": "1.0",
+    "documentation": "https://github.com/Ile83/Ha-Helen-electricity",
+    "dependencies": [],
+    "codeowners": ["@ile83"],
+    "requirements": ["requests"]
+  }
