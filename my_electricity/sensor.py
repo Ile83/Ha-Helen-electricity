@@ -32,13 +32,17 @@ class ElectricitySensor(SensorEntity):
         await self.coordinator.async_request_refresh()
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
+    client_id = config_entry.data.get("client_id")
+    client_secret = config_entry.data.get("client_secret")
+    subscription_key = config_entry.data.get("subscription_key")
     meter_point_id = config_entry.data.get("meter_point_id")
+
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
         name="electricity usage",
-        update_method=lambda: fetch_data(meter_point_id),
-        update_interval=timedelta(minutes=5),
+        update_method=lambda: fetch_data(meter_point_id, client_id, client_secret, subscription_key),
+        update_interval=timedelta(minutes=30),
     )
 
     await coordinator.async_refresh()
