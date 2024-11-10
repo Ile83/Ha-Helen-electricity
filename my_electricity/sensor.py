@@ -1,8 +1,6 @@
 import requests
 from homeassistant.components.sensor import SensorEntity
-from homeassistant.const import ENERGY_KILO_WATT_HOUR, DEVICE_CLASS_ENERGY
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from homeassistant.helpers.entity import EntityCategory
 from datetime import timedelta
 import logging
 import time
@@ -19,21 +17,22 @@ class ElectricitySensor(SensorEntity):
         self.coordinator = coordinator
         self._attr_name = f"Electricity Usage ({meter_point_id})"
         self._attr_unique_id = f"electricity_usage_{meter_point_id}"
-        self.meter_point_id = meter_point_id
-        self._attr_device_class = DEVICE_CLASS_ENERGY
-        self._attr_state_class = "total_increasing"
-        self._attr_unit_of_measurement = ENERGY_KILO_WATT_HOUR
         self._state = None
+        self.meter_point_id = meter_point_id
+
+        _LOGGER.info(f"Initialized ElectricitySensor for meter_point_id: {meter_point_id}")
 
     @property
     def state(self):
         return self.coordinator.data.get(self.meter_point_id)
 
     async def async_update(self):
+        _LOGGER.debug(f"Updating state for meter_point_id: {self.meter_point_id}")
         await self.coordinator.async_request_refresh()
 
 async def async_setup_entry(hass, config_entry, async_add_entities):
     meter_point_id = config_entry.data.get("meter_point_id")
+    _LOGGER.info(f"Setting up entity for meter_point_id: {meter_point_id}")
     coordinator = DataUpdateCoordinator(
         hass,
         _LOGGER,
@@ -51,8 +50,10 @@ def rate_limit():
     global last_called_times
     last_called_times = [t for t in last_called_times if current_time - t < 60]
     if len(last_called_times) >= RATE_LIMIT:
+        _LOGGER.warning("Rate limit exceeded. Please try again later.")
         raise UpdateFailed("Rate limit exceeded. Please try again later.")
     last_called_times.append(current_time)
+    _LOGGER.debug(f"Rate limit check passed. Current API call count: {len(last_called_times)}")
 
 async def fetch_data(meter_point_id):
     try:
@@ -67,13 +68,21 @@ async def fetch_data(meter_point_id):
             "endTime": "2023-12-31T23:59:59Z",
             "resultStep": "DAY"
         }
+        _LOGGER.info(f"Fetching data for meter_point_id: {meter_point_id}")
         response = requests.get(API_URL, headers=headers, params=params)
         response.raise_for_status()
         data = response.json()
+        
+        # Log the response for debugging purposes
+        _LOGGER.debug(f"API response: {data}")
+        
         # Extract the kWh usage for the specific meter point
         time_series = data.get("timeSeriesResult", {}).get("timeSeries", {})
         if time_series:
-            return {meter_point_id: time_series.get("sum")}
+            usage_sum = time_series.get("sum")
+            _LOGGER.info(f"Fetched electricity usage sum for meter_point_id: {meter_point_id}: {usage_sum}")
+            return {meter_point_id: usage_sum}
+        _LOGGER.error(f"Meter point ID {meter_point_id} not found in response.")
         raise UpdateFailed(f"Meter point ID {meter_point_id} not found in response.")
     except requests.exceptions.HTTPError as http_err:
         _LOGGER.error(f"HTTP error occurred: {http_err}")
