@@ -24,6 +24,10 @@ class ElectricitySensor(SensorEntity):
     def state(self):
         return self.coordinator.data.get(self.meter_point_id)
 
+    @property
+    def unit_of_measurement(self):
+        return "kWh"
+
     async def async_update(self):
         await self.coordinator.async_request_refresh()
 
